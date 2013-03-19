@@ -1,4 +1,8 @@
-LOG_FILE= 'C:\\ioc.log'
+#C:\Sites\IOCAgent>sc \\localhost create IOCAgent binpath= C:\Sites\IOCAgent\ioc_agent.exe start= auto
+# Copyright (c) 2013 Matt Jezorek, All Rights Reserved
+# Until I figure out what license this will use it is considered DWYW (do what you want)
+
+LOG_FILE= 'C:\\Sites\IOCAgent\ioc.log'
 CONFIG_FILE = 'C:\\Sites\IOCAgent\config.yml'
 require 'rubygems'
 require 'RubyIOC'
@@ -37,13 +41,12 @@ begin
 					sleep 0.5
 				end
 			end
-			File.open(LOG_FILE, 'a') { |f|
-				f.puts "STATE: #{state}"
-				f.puts "IOCAgent ended at " + Time.now.to_s 
-			}
 		end
 
 		def service_stop
+			File.open(LOG_FILE, 'a') { |f|
+				f.puts "IOCAgent ended at " + Time.now.to_s 
+			}
 			exit!
 		end
 
