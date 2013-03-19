@@ -2,14 +2,13 @@
 # Copyright (c) 2013 Matt Jezorek, All Rights Reserved
 # Until I figure out what license this will use it is considered DWYW (do what you want)
 
-LOG_FILE= 'C:\\Sites\IOCAgent\ioc.log'
 CONFIG_FILE = 'C:\\Sites\IOCAgent\config.yml'
 require 'rubygems'
 require 'RubyIOC'
 require 'yaml'
 require 'win32/daemon'
 require 'multi_json'
-
+require_relative 'scanner'
 exit if Object.const_defined?(:Ocra)
 
 begin
@@ -21,20 +20,17 @@ begin
 		# 
 		def service_init
 			$config = YAML.load_file(CONFIG_FILE)
+			$scanner = Scanner.new($config)
 		end
 
 		# Def this is the daemons main loop This it the code
 		# that will run while your service is running
 		# loop is not implicit
 		def service_main(*args)
-			File.open(LOG_FILE, 'a') { |f|
-				f.puts "IOCAgent started at: #{$config['time']} " + Time.now.to_s
-			}
+			$scanner.log("IOCAgent started at: #{$config['time']} " + Time.now.to_s)
 			while running?
 				if state == RUNNING
-					File.open(LOG_FILE, 'a') { |f|
-						f.puts "Checking for IOCs @ " + Time.now.to_s
-					}
+					$scanner.check
 					sleep($config['time'].to_i.minutes)
 				else
 					# paused or idle
@@ -44,9 +40,7 @@ begin
 		end
 
 		def service_stop
-			File.open(LOG_FILE, 'a') { |f|
-				f.puts "IOCAgent ended at " + Time.now.to_s 
-			}
+			$scanner.log("IOCAgent ended at " + Time.now.to_s)
 			exit!
 		end
 
@@ -58,8 +52,5 @@ begin
 	end
 	IOCAgent.mainloop
 rescue Exception => err
-	File.open(LOG_FILE, 'a') { | f |
-		f.puts 'IOCAgent failure: ' + err.to_s
-		raise
-	}
+	raise
 end
