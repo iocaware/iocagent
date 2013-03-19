@@ -1,0 +1,13 @@
+*.exe
+*.gem
+*.rbc
+.bundle
+.config
+lib/bundler/man
+InstalledFiles
+pkg
+rdoc
+spec/reports
+test/tmp
+test/version_tmp
+tmp
