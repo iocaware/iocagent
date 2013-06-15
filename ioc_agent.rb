@@ -2,7 +2,7 @@
 # Copyright (c) 2013 Matt Jezorek, All Rights Reserved
 # Until I figure out what license this will use it is considered DWYW (do what you want)
 
-CONFIG_FILE = 'C:\\Sites\IOCAgent\config.yml'
+CONFIG_FILE = 'C:\\IOCAware\config.yml'
 require 'rubygems'
 require 'RubyIOC'
 require 'yaml'
