@@ -1,8 +1,9 @@
 #C:\Sites\IOCAgent>sc \\localhost create IOCAgent binpath= C:\Sites\IOCAgent\ioc_agent.exe start= auto
 # Copyright (c) 2013 Matt Jezorek, All Rights Reserved
 # Until I figure out what license this will use it is considered DWYW (do what you want)
+$LOAD_PATH.unshift File.dirname($0)
 
-CONFIG_FILE = 'C:\\IOCAware\config.yml'
+
 require 'rubygems'
 require 'RubyIOC'
 require 'yaml'
@@ -10,6 +11,7 @@ require 'win32/daemon'
 require 'multi_json'
 require_relative 'scanner'
 exit if Object.const_defined?(:Ocra)
+CONFIG_FILE = File.dirname(ENV["OCRA_EXECUTABLE"]) + '\\config.yml'
 
 begin
 	include Win32
@@ -27,11 +29,12 @@ begin
 		# that will run while your service is running
 		# loop is not implicit
 		def service_main(*args)
-			$scanner.log("IOCAgent started at: #{$config['time']} " + Time.now.to_s)
+			$scanner.log("IOCAgent started at: #{$config['delay']} " + Time.now.to_s)
+			$scanner.register
 			while running?
 				if state == RUNNING
 					$scanner.check
-					sleep($config['time'].to_i.minutes)
+					sleep($config['delay'].to_i.minutes)
 				else
 					# paused or idle
 					sleep 0.5
