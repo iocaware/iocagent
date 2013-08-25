@@ -17,6 +17,7 @@ class Scanner
 		$hostname = Host.hostname
 		$os = Uname.sysname
 		$osversion = Uname.version
+		$scanengine = RubyIOC::Scanner.new
 	end
 
 	def send_data(url, data)
@@ -33,7 +34,12 @@ class Scanner
 		return response
 	end
 
-	def run
+	def getjob(jobid)
+		log(jobid)
+	end
+
+	def runjob(job)
+		log(job)
 	end
 
 	def check
