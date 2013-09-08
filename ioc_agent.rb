@@ -1,17 +1,17 @@
-#C:\Sites\IOCAgent>sc \\localhost create IOCAgent binpath= C:\Sites\IOCAgent\ioc_agent.exe start= auto
+# 
+# ocra --output iocaware.exe --no-autoload .\ioc_agent.rb .\scanner.rb --
+# msiexec /i iocaware.msi SERVERURL="http://localhost:3000/
+# 'C:\Program Files (x86)\WiX Toolset v3.7\bin\candle' .\iocaware.wxs
+# 'C:\Program Files (x86)\WiX Toolset v3.7\bin\light' .\iocaware.wixobj
 # Copyright (c) 2013 Matt Jezorek, All Rights Reserved
 # Until I figure out what license this will use it is considered DWYW (do what you want)
-$LOAD_PATH.unshift File.dirname($0)
-
-
 require 'rubygems'
 require 'RubyIOC'
-require 'yaml'
 require 'win32/daemon'
-require 'multi_json'
-require_relative 'scanner'
+require_relative 'agent'
+
 exit if Object.const_defined?(:Ocra)
-CONFIG_FILE = File.dirname(ENV["OCRA_EXECUTABLE"]) + '\\config.yml'
+DEBUG = true
 
 begin
 	include Win32
@@ -20,30 +20,19 @@ begin
 		# This method fires off before the service main
 		# loop fires. Any pre-setup code should be here
 		# 
-		def service_init
-			$config = YAML.load_file(CONFIG_FILE)
-			$scanner = Scanner.new($config)
+		def service_init(*args)
+			$agent = IOCAware::Agent.new
 		end
 
 		# Def this is the daemons main loop This it the code
 		# that will run while your service is running
 		# loop is not implicit
 		def service_main(*args)
-			$scanner.log("IOCAgent started at: #{$config['delay']} " + Time.now.to_s)
-			$scanner.register
-			while running?
-				if state == RUNNING
-					$scanner.check
-					sleep($config['delay'].to_i.minutes)
-				else
-					# paused or idle
-					sleep 0.5
-				end
-			end
+			$agent.start
 		end
 
 		def service_stop
-			$scanner.log("IOCAgent ended at " + Time.now.to_s)
+			$agent.stop
 			exit!
 		end
 

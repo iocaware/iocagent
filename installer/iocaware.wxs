@@ -1,0 +1,40 @@
+<?xml version="1.0"?>
+<?define ProductVersion = "0.0.1"?>
+<?define ProductUpgradeCode ="3596A679-913E-458B-A0B6-4745AC30209C"?>
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+ <Product Id="*" UpgradeCode="$(var.ProductUpgradeCode)"  Name="IOCAware Agent" Version="$(var.ProductVersion)" Manufacturer="IOCAware" Language="1033">
+ 	<Package InstallerVersion="200" Compressed="yes" Comments="Windows Installer Package for IOCAWARE" />
+ 	<Media Id="1" Cabinet="iocaware.cab" EmbedCab="yes" />
+ 	<Icon Id="ProductIcon" SourceFile="favicon.ico" />
+ 	<Property Id="ARPPRODUCTICON" Value="ProductIcon"/>
+
+
+    <Upgrade Id="$(var.ProductUpgradeCode)">
+         <UpgradeVersion Minimum="$(var.ProductVersion)" OnlyDetect="yes" Property="NEWERVERSIONDETECTED"/>
+         <UpgradeVersion Minimum="0.0.0" Maximum="$(var.ProductVersion)" IncludeMinimum="yes" IncludeMaximum="no" Property="OLDERVERSIONBEINGUPGRADED"/>	  
+      </Upgrade>
+      <Condition Message="A newer version of this software is already installed.">NOT NEWERVERSIONDETECTED</Condition>
+
+
+ 	<Directory Id="TARGETDIR" Name="SourceDir">
+ 		<Directory Id="ProgramFilesFolder">
+ 			<Directory Id="INSTALLDIR" Name="IOCAware">
+ 				<Component Id="ApplicationFiles" Guid="1F87EEF4-6520-4458-A0A2-73E0CE4FA2C2" >
+ 					<File Id="ApplicationFile1" Source="iocaware.exe"/>
+ 					<ServiceInstall Id="iocaware_service" Description="IOCAware Agent Service" DisplayName="IOCAware Agent" Name="IOCA" Start="auto" Type="ownProcess" ErrorControl="normal" Arguments="--url [SERVERURL]"/>
+ 					<ServiceControl Id='iocaware_service_control' Remove='both' Name='IOCA' Start='install' Stop='both' Wait='yes' />
+ 				</Component>
+ 			</Directory>
+ 		</Directory>
+ 	</Directory>
+
+ 	<Feature Id="DefaultFeature" Level="1">
+ 	 <ComponentRef Id="ApplicationFiles" />
+ 	</Feature>
+
+ 	<InstallExecuteSequence>
+         <RemoveExistingProducts After="InstallValidate"/>
+    </InstallExecuteSequence>
+
+ </Product>
+</Wix>
