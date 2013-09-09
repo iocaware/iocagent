@@ -4,9 +4,10 @@ require_relative "utils"
 module IOCAware
 	class Agent
 
-		def initialize
+		def initialize(config = {})
 			@running = false
 			$utils = IOCAware::Utils.new
+			$utils.log(config.inspect);
 		end
 
 		def start

@@ -8,6 +8,7 @@
 require 'rubygems'
 require 'RubyIOC'
 require 'win32/daemon'
+require 'optparse'
 require_relative 'agent'
 
 exit if Object.const_defined?(:Ocra)
@@ -21,7 +22,14 @@ begin
 		# loop fires. Any pre-setup code should be here
 		# 
 		def service_init(*args)
-			$agent = IOCAware::Agent.new
+			options = {}
+			opts = OptionParser.new do | parser | 
+				parser.on("--url [STR]", "This is the url that the server is listening on") do | setting |
+					options[:url] = setting
+				end
+			end
+			opts.parse!(args)
+			$agent = IOCAware::Agent.new(options)
 		end
 
 		# Def this is the daemons main loop This it the code
