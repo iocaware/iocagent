@@ -8,11 +8,13 @@
 require 'rubygems'
 require 'RubyIOC'
 require 'win32/daemon'
+require 'multi_json'
 require 'optparse'
 require_relative 'agent'
 
+
+Dir.chdir File.dirname($0) # change directory back to where it was
 exit if Object.const_defined?(:Ocra)
-DEBUG = true
 
 begin
 	include Win32
@@ -21,14 +23,16 @@ begin
 		# This method fires off before the service main
 		# loop fires. Any pre-setup code should be here
 		# 
+
 		def service_init(*args)
 			options = {}
+			options[:working_directory] = File.dirname(ENV["OCRA_EXECUTABLE"])
 			opts = OptionParser.new do | parser | 
-				parser.on("--url [STR]", "This is the url that the server is listening on") do | setting |
+				parser.on("-u", "--url [STR]", "This is the url that the server is listening on") do | setting |
 					options[:url] = setting
 				end
 			end
-			opts.parse!(args)
+			opts.parse!
 			$agent = IOCAware::Agent.new(options)
 		end
 
@@ -40,8 +44,9 @@ begin
 		end
 
 		def service_stop
+			$utils = IOCAware::Utils.new
+			$utils.log("Stopping the agent now")
 			$agent.stop
-			exit!
 		end
 
 		def service_pause

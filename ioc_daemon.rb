@@ -6,6 +6,7 @@ require 'daemons'
 require_relative 'scanner'
 CONFIG_FILE = 'config.yml'
 
+
 class IOCDaemon
 	def initialize
 		$config = YAML.load_file(CONFIG_FILE)
