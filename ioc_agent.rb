@@ -26,10 +26,10 @@ begin
 
 		def service_init(*args)
 			options = {}
-			options[:working_directory] = File.dirname(ENV["OCRA_EXECUTABLE"])
+			options['working_directory'] = File.dirname(ENV["OCRA_EXECUTABLE"])
 			opts = OptionParser.new do | parser | 
 				parser.on("-u", "--url [STR]", "This is the url that the server is listening on") do | setting |
-					options[:url] = setting
+					options['url'] = setting
 				end
 			end
 			opts.parse!
