@@ -1,8 +1,8 @@
 require 'json'
 require 'net/http'
 require "uri"
-require "openssl"
 require "base64"
+require "signed_json"
 
 # add a to_bool for our strings in the configuration
 class String
@@ -34,40 +34,17 @@ module IOCAware
 		def get_key
 			if !File.exist?($config['working_directory'] + "\\agent.key")
 				$utils.log("Going get the key for this agent")
-				key = $utils.send_data('/agent/publickey/' + $config['agent_id'] , '')
+				key = $utils.send_data('/agent/publickey/' + $config['agent_id'] , '', false)
 				File.open($config['working_directory'] + "\\agent.key", "w+") {|f|
 					f.write(key)
 				}
-				return Base64.decode64(key)
+				return key
 			else
-				return Base64.decode64(File.read($config['working_directory'] + "\\agent.key"))
+				return File.read($config['working_directory'] + "\\agent.key")
 			end
 		end
 
-		def encrypt_data(data)
-			begin
-				data = Hash.new
-				log(get_key)
-				key = OpenSSL::PKey::RSA.new(get_key)
-				data['data'] = Base64.encode64(key.public_encrypt(data))
-				return data.to_json
-			rescue => e
-				error(e.backtrace)
-				return nil
-			end
-		end
-
-		def decrypt_data(data)
-			begin
-				key = OpenSSL::PKey::RSA.new(get_key)
-				return Base64.decode64(key.public_decrypt(data))
-			rescue => e
-				error(e.backtrace)
-				return nil
-			end
-		end
-
-		def send_data(url, data, encrypt = false)
+		def send_data(url, data = "{}", sign = true)
 			response = nil
 			begin
 				wsurl = $config['url'] + url
@@ -80,18 +57,30 @@ module IOCAware
 						http.verify_mode = OpenSSL::SSL::VERIFY_NONE
 					end
 				end
-				request = Net::HTTP::Post.new(uri.request_uri)
-				request["Content-Type"] = "application/json"
-				if encrypt
-					data = encrypt_data(data)
+				if sign
+					begin
+						s = SignedJson::Signer.new(get_key)
+						data = s.encode(data)
+					rescue => e
+						error("Could not sign JSON data")
+					end
 				end
-				request.body = data
-				response = http.request(request).body
-				if encrypt
-					response = decrypt_data(response)
+				req, body = http.post(uri.path, data, {
+					"Content-Type" => 'application/json'
+					}
+				)
+				output = req.body
+				if sign
+					begin
+						output = s.decode(output)
+					rescue SignedJson::SignatureError => e
+						error("JSON Data was tampered with or other invalid signature")
+					end
 				end
-			rescue => e
-				error(e.backtrace)
+				log(output)
+				return JSON.parse(output)
+			rescue Exception => e
+				error("URL: " + url + " Error: " + e.inspect + " : " + caller.join('\n')) 
 			end
 			return response
 		end

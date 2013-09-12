@@ -34,10 +34,9 @@ module IOCAware
 			# we have a configuration from our file. Lets get a current configuration
 			data = Hash.new
 			begin
-				response = $utils.send_data('/agent/configure', '')
-				data = JSON.parse(response)
-			rescue => e
-				$utils.error(e.backtrace)
+				data = $utils.send_data('/agent/configure', '', false)
+			rescue Exception => e
+				$utils.error(e.inspect + " : " + caller.join('\n')) 
 			end
 			$config = $config.deep_merge(data)
 			File.open($config['working_directory'] + "\\config.yml", "w+") {|f|
@@ -54,8 +53,8 @@ module IOCAware
 				$host['hostname'] = Host.hostname
 				$host['os'] = Uname.sysname
 				$host['osv'] = Uname.version
-			rescue => e
-				$utils.error(e.backtrace)
+			rescue Exception => e
+				$utils.error(e.inspect + " : " + caller.join('\n')) 
 			end
 		end
 
@@ -81,12 +80,13 @@ module IOCAware
 					i = $config['check_settings'].to_i
 					check_config
 				end
-			rescue => e
-				$utils.error(e.backtrace)
+			rescue Exception => e
+				$utils.error(e.inspect + " : " + caller.join('\n')) 
 			end
 		end
 
 		def stop
+			$utils.log("Stopping IOCAware agent")
 			@running = false
 			exit!
 		end
@@ -94,12 +94,13 @@ module IOCAware
 		def register
 			data = $host
 			data['agent_id'] = $config['agent_id']
+			$utils.log(data.to_json)
 			begin
-				$utils.log(data.to_json)
-				$utils.send_data('/agent/register/' + $config['agent_id'], data.to_json, true)
-			rescue => ex
-				$utils.error(ex.backtrace)
+				d = $utils.send_data('/agent/register/' + $config['agent_id'], data.to_json, true)
+			rescue Exception => ex
+				$utils.error(ex.rescue Exception => e)
 			end
+			$utils.log(d.inspect)
 		end
 
 		def check

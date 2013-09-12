@@ -25,15 +25,21 @@ begin
 		# 
 
 		def service_init(*args)
-			options = {}
-			options['working_directory'] = File.dirname(ENV["OCRA_EXECUTABLE"])
+			@options = {}
+			@options['working_directory'] = File.dirname(ENV["OCRA_EXECUTABLE"])
 			opts = OptionParser.new do | parser | 
 				parser.on("-u", "--url [STR]", "This is the url that the server is listening on") do | setting |
-					options['url'] = setting
+					@options['url'] = setting
 				end
 			end
 			opts.parse!
-			$agent = IOCAware::Agent.new(options)
+			begin
+				$agent = IOCAware::Agent.new(@options)
+			rescue => e
+				File.open(@options['working_directory'] + "\\ioc_agent_error.log", 'a') { |f|
+					f.puts "[" + Time.now.getutc.to_s + "] ERROR: "  + e.inspect  + " "  +  caller.inspect
+				}
+			end
 		end
 
 		# Def this is the daemons main loop This it the code
@@ -44,8 +50,6 @@ begin
 		end
 
 		def service_stop
-			$utils = IOCAware::Utils.new
-			$utils.log("Stopping the agent now")
 			$agent.stop
 		end
 
