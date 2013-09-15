@@ -10,10 +10,9 @@ require 'RubyIOC'
 require 'win32/daemon'
 require 'multi_json'
 require 'optparse'
+require 'atomic'
+
 require_relative 'agent'
-
-
-Dir.chdir File.dirname($0) # change directory back to where it was
 exit if Object.const_defined?(:Ocra)
 
 begin
@@ -23,22 +22,26 @@ begin
 		# This method fires off before the service main
 		# loop fires. Any pre-setup code should be here
 		# 
+		def error(msg)
+			File.open("C:\\Program Files (x86)\\IOCAware\\ioc_agent_error.log", 'a') { |f|
+				f.puts "[" + Time.now.getutc.to_s + "] ERROR: "  + msg
+			}
+		end
 
 		def service_init(*args)
-			@options = {}
-			@options['working_directory'] = File.dirname(ENV["OCRA_EXECUTABLE"])
-			opts = OptionParser.new do | parser | 
-				parser.on("-u", "--url [STR]", "This is the url that the server is listening on") do | setting |
-					@options['url'] = setting
-				end
-			end
-			opts.parse!
 			begin
+				@options = {}
+				@options['working_directory'] = File.dirname(ENV["OCRA_EXECUTABLE"])
+				opts = OptionParser.new do | parser | 
+					parser.on("-u", "--url [STR]", "This is the url that the server is listening on") do | setting |
+						@options['url'] = setting
+					end
+				end
+				opts.parse!
+				
 				$agent = IOCAware::Agent.new(@options)
 			rescue => e
-				File.open(@options['working_directory'] + "\\ioc_agent_error.log", 'a') { |f|
-					f.puts "[" + Time.now.getutc.to_s + "] ERROR: "  + e.inspect  + " "  +  caller.inspect
-				}
+				error("[" + Time.now.getutc.to_s + "] ERROR: "  + e.inspect  + " "  +  caller.inspect)
 			end
 		end
 
@@ -46,7 +49,11 @@ begin
 		# that will run while your service is running
 		# loop is not implicit
 		def service_main(*args)
-			$agent.start
+			begin
+				$agent.start
+			rescue => e
+				error(e.inspect)
+			end
 		end
 
 		def service_stop

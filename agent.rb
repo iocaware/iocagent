@@ -68,11 +68,13 @@ module IOCAware
 
 		def start
 			@running = true
+			puts "starting"
 			$utils.log("Starting IOCAware agent")
 			i = $config['check_settings'].to_i
 			begin
 				loop do 
 					break if !@running
+					check
 					sleep_break($config['check_time'].to_i*60)
 					i -= 1
 					next unless i.zero?
@@ -100,11 +102,38 @@ module IOCAware
 			rescue Exception => ex
 				$utils.error(ex.rescue Exception => e)
 			end
-			$utils.log(d.inspect)
 		end
 
 		def check
-			
+			begin
+				d = $utils.send_data('/agent/check/' + $config['agent_id'], '')
+				jobs = d['jobs']
+				jobs.each { |j|
+					run_job(j)
+				}
+			rescue Exception => ex
+				$utils.error(ex.inspect)
+			end
+		end
+
+		def run_job(job)
+			begin
+				$utils.send_data('/job/confirm/' + job['jid'] + '/' + $config['agent_id'], '')
+				# get the iocs
+				job['iocs'].each { |i|
+					ioc = $utils.send_data('/ioc/get/' + i, '', false).strip
+					# run the IOC
+					begin
+						results = RubyIOC::Scanner.new(ioc).scan
+						$utils.log(results.to_yaml)
+						#report_results(results)
+					rescue => ex
+						$utils.error(ex.inspect + " " + caller.join("\n"))
+					end
+				}
+			rescue => ex
+				$utils.error(ex.inspect + " " + caller.join("\n"))
+			end
 		end
 
 	end

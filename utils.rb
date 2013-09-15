@@ -10,6 +10,14 @@ class String
   		map = Hash[%w[true yes 1].product([true]) + %w[false no 0].product([false])]
   		map[s.to_s.downcase]
 	end
+
+	def is_json?
+    begin
+      !!JSON.parse(self)
+    rescue
+      false
+    end
+  end
 end
 
 
@@ -77,8 +85,12 @@ module IOCAware
 						error("JSON Data was tampered with or other invalid signature")
 					end
 				end
-				log(output)
-				return JSON.parse(output)
+				# FIXME: remove the next line it's debug
+				if output.is_json?
+					return JSON.parse(output)
+				else 
+					return output
+				end
 			rescue Exception => e
 				error("URL: " + url + " Error: " + e.inspect + " : " + caller.join('\n')) 
 			end
