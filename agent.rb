@@ -3,6 +3,7 @@ require 'securerandom'
 require 'sys/host'
 require 'sys/uname'
 require 'openssl'
+require 'json'
 
 require_relative "utils"
 include Sys
@@ -96,6 +97,7 @@ module IOCAware
 		def register
 			data = $host
 			data['agent_id'] = $config['agent_id']
+			data['agent_version'] = IOCAware::Utils::VERSION
 			$utils.log(data.to_json)
 			begin
 				d = $utils.send_data('/agent/register/' + $config['agent_id'], data.to_json, true)
@@ -117,16 +119,17 @@ module IOCAware
 		end
 
 		def run_job(job)
+			$utils.log("Starting Job: " + job['jid'])
 			begin
+
 				$utils.send_data('/job/confirm/' + job['jid'] + '/' + $config['agent_id'], '')
 				# get the iocs
 				job['iocs'].each { |i|
 					ioc = $utils.send_data('/ioc/get/' + i, '', false).strip
 					# run the IOC
 					begin
-						results = RubyIOC::Scanner.new(ioc).scan
-						$utils.log(results.to_yaml)
-						#report_results(results)
+						results = RubyIOC::Scanner.new(ioc).scan.to_json
+						$utils.send_data('/job/report/' + job['jid'] + '/' + i + "/" + $config['agent_id'], results)
 					rescue => ex
 						$utils.error(ex.inspect + " " + caller.join("\n"))
 					end
@@ -134,6 +137,7 @@ module IOCAware
 			rescue => ex
 				$utils.error(ex.inspect + " " + caller.join("\n"))
 			end
+			$utils.log("Ending Job: " + job['jid'])
 		end
 
 	end

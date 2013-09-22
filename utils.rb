@@ -23,6 +23,8 @@ end
 
 module IOCAware
 	class Utils
+		VERSION = "0.0.1"
+		
 		def initialize(config = {})
 			$config = config
 		end
